@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unfälle Deutschland · Visual Analytics Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ============================================================
+     STARTSEITE / TITELBLATT — Zeitraffer + Bereichsauswahl
+     ============================================================ -->
+<div id="view-start" class="view-panel">
+  <button class="corner-arrow corner-arrow-right" data-view="verkehr" aria-label="Zur Unfallstatistik" title="Zur Unfallstatistik">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+  </button>
+
+  <div class="wrap">
+
+  <div class="panel tl-panel">
+    <div class="tl-mapstats-row">
+      <div class="start-header">
+        <h1>Unfälle Deutschland</h1>
+        <p class="start-desc">Ein komplettes Unfalljahr in Deutschland, Punkt für Punkt in Echtzeit nachgespielt. Jeder Blitz auf der Karte ist ein echter, polizeilich erfasster Unfall mit Personenschaden.</p>
+      </div>
+
+      <div class="tl-mapwrap tl-mapwrap-large">
+        <div id="tlMap"></div>
+        <canvas id="tlFlashCanvas"></canvas>
+      </div>
+
+      <div class="tl-stats-live">
+        <div class="tl-date-overlay" id="tlCurDate">01.01.2024 · 00:00</div>
+
+        <div class="tl-stat-row">
+          <div class="tl-stat-head">
+            <svg class="tl-count-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span class="tl-stat-label">Unfälle gesamt</span>
+          </div>
+          <div class="tl-stat-bar-line">
+            <div class="tl-stat-bar-track"><div class="tl-stat-bar-fill" id="tlBarTotal"></div></div>
+            <span class="tl-stat-value" id="tlCurTotal">0</span>
+          </div>
+        </div>
+        <div class="tl-stat-row tl-count-dead">
+          <div class="tl-stat-head">
+            <svg class="tl-count-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 2.4 1.2 4.5 3 5.7V17a1 1 0 0 0 1 1h1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2h1a1 1 0 0 0 1-1v-2.3c1.8-1.2 3-3.3 3-5.7a7 7 0 0 0-7-7Z"/><circle cx="9" cy="10" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.3" fill="currentColor" stroke="none"/></svg>
+            <span class="tl-stat-label">Getötete</span>
+          </div>
+          <div class="tl-stat-bar-line">
+            <div class="tl-stat-bar-track"><div class="tl-stat-bar-fill" id="tlBarDead"></div></div>
+            <span class="tl-stat-value" id="tlCurDead">0</span>
+          </div>
+        </div>
+        <div class="tl-stat-row tl-count-severe">
+          <div class="tl-stat-head">
+            <svg class="tl-count-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <span class="tl-stat-label">Schwerverletzte</span>
+          </div>
+          <div class="tl-stat-bar-line">
+            <div class="tl-stat-bar-track"><div class="tl-stat-bar-fill" id="tlBarSevere"></div></div>
+            <span class="tl-stat-value" id="tlCurSevere">0</span>
+          </div>
+        </div>
+        <div class="tl-stat-row tl-count-light">
+          <div class="tl-stat-head">
+            <svg class="tl-count-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-15 12 12)"/><circle cx="9.3" cy="10.1" r="0.6" fill="currentColor" stroke="none" transform="rotate(-15 12 12)"/><circle cx="14.7" cy="13.9" r="0.6" fill="currentColor" stroke="none" transform="rotate(-15 12 12)"/></svg>
+            <span class="tl-stat-label">Leichtverletzte</span>
+          </div>
+          <div class="tl-stat-bar-line">
+            <div class="tl-stat-bar-track"><div class="tl-stat-bar-fill" id="tlBarLight"></div></div>
+            <span class="tl-stat-value" id="tlCurLight">0</span>
+          </div>
+        </div>
+
+        <div class="tl-slider-block">
+          <span class="tl-speed-label">Zeitpunkt im Jahr</span>
+          <input type="range" class="tl-seek" id="tlSeek" min="0" value="0" step="3600">
+          <div class="tl-month-ticks" id="tlMonthTicks"></div>
+        </div>
+
+        <div class="tl-slider-block">
+          <span class="tl-speed-label">Tempo</span>
+          <input type="range" class="tl-speed-slider" id="tlSpeedSlider" min="0" max="7" step="1" value="2">
+          <div class="tl-speed-slider-value" id="tlSpeedSliderLabel">1×</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     VERKEHRSSTATISTIK — bestehendes Unfall-Dashboard
+     ============================================================ -->
+<div id="view-verkehr" class="view-panel" style="display:none;">
+  <div class="subheader">
+    <div class="subheader-inner">
+      <div class="subheader-left">
+        <button class="back-arrow-inline" data-view="start" aria-label="Zur Startseite" title="Zur Startseite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 5 5 12 12 19"/></svg>
+        </button>
+        <div class="gf-bar" id="globalFilterBar"></div>
+      </div>
+      <div class="subheader-right">
+        <button id="resetBtn">Filter zurücksetzen</button>
+      </div>
+    </div>
+  </div>
+
+<div class="wrap">
+
+  <!-- KPI Gantry -->
+  <div class="gantry" id="gantry">
+    <div class="gcell total">
+      <div class="glabel">Unfälle (gefiltert)</div>
+      <div class="gvalue" id="kpiTotal">—</div>
+    </div>
+    <div class="gcell dead">
+      <div class="glabel"><svg class="gcell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 0-7 7c0 2.4 1.2 4.5 3 5.7V17a1 1 0 0 0 1 1h1v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2h1a1 1 0 0 0 1-1v-2.3c1.8-1.2 3-3.3 3-5.7a7 7 0 0 0-7-7Z"/><circle cx="9" cy="10" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.3" fill="currentColor" stroke="none"/></svg>Getötete</div>
+      <div class="gvalue" id="kpiDead">—</div>
+      <div class="gsub" id="kpiDeadSub">—</div>
+    </div>
+    <div class="gcell severe">
+      <div class="glabel"><svg class="gcell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Schwerverletzte</div>
+      <div class="gvalue" id="kpiSevere">—</div>
+      <div class="gsub" id="kpiSevereSub">—</div>
+    </div>
+    <div class="gcell light">
+      <div class="glabel"><svg class="gcell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-15 12 12)"/><circle cx="9.3" cy="10.1" r="0.6" fill="currentColor" stroke="none" transform="rotate(-15 12 12)"/><circle cx="14.7" cy="13.9" r="0.6" fill="currentColor" stroke="none" transform="rotate(-15 12 12)"/></svg>Leichtverletzte</div>
+      <div class="gvalue" id="kpiLight">—</div>
+      <div class="gsub" id="kpiLightSub">—</div>
+    </div>
+    <div class="gcell share">
+      <div class="glabel">Anteil an Gesamt</div>
+      <div class="gvalue" id="kpiShare">—</div>
+      <div class="gsub" id="kpiShareSub">aktive Auswahl</div>
+    </div>
+  </div>
+
+  <!-- Bundesland -->
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-head">
+        <p class="eyebrow">Bundesländer · Choroplethenkarte</p>
+        <h2 class="panel-title">Räumliche Verteilung</h2>
+      </div>
+      <svg id="landMapChart" width="100%" height="420"></svg>
+      <details class="insight-toggle">
+        <summary>Analyse &amp; Einordnung</summary>
+        <div class="insight blue" id="landMapInsight">–</div>
+      </details>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <p class="eyebrow">Bundesländer · Ranking</p>
+        <h2 class="panel-title">Unfälle je Land</h2>
+      </div>
+      <svg id="landChart" width="100%" height="420"></svg>
+      <details class="insight-toggle">
+        <summary>Analyse &amp; Einordnung</summary>
+        <div class="insight" id="landInsight">–</div>
+      </details>
+    </div>
+  </div>
+
+  <!-- ===== Vertiefende Analysen ===== -->
+  <div class="section-divider">
+    <span class="eyebrow" style="color:var(--signal-amber);">Vertiefende Analysen</span>
+  </div>
+
+  <!-- Orbit + Radial Clock -->
+  <div class="grid2b">
+    <div class="panel">
+      <div class="panel-head">
+        <p class="eyebrow">Kombinationen · interaktiv</p>
+        <h2 class="panel-title">Kollisions-Orbit</h2>
+      </div>
+      <div class="orbit-selector" id="orbitSelector"></div>
+      <svg id="orbitChart" width="100%" height="420"></svg>
+      <details class="insight-toggle">
+        <summary>Analyse &amp; Einordnung</summary>
+        <div class="insight red" id="orbitInsight">–</div>
+      </details>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <p class="eyebrow">Zeitmuster · zirkulär</p>
+        <h2 class="panel-title">Unfall-Uhr</h2>
+      </div>
+      <div class="orbit-selector" id="clockSpacer" aria-hidden="true" style="visibility:hidden;"></div>
+      <svg id="clockChart" width="100%" height="420"></svg>
+      <details class="insight-toggle">
+        <summary>Analyse &amp; Einordnung</summary>
+        <div class="insight blue" id="clockInsight">–</div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Ridgeline -->
+  <div class="panel" style="margin-top:20px;">
+    <div class="panel-head">
+      <p class="eyebrow">Fingerabdruck je Verkehrsmittel</p>
+      <h2 class="panel-title">Rhythmus im Vergleich</h2>
+    </div>
+    <div class="ridge-mode-group">
+      <button class="ridge-mode-btn active" data-mode="hour">Tagesrhythmus</button>
+      <button class="ridge-mode-btn" data-mode="weekday">Wochenverlauf</button>
+      <button class="ridge-mode-btn" data-mode="month">Jahresverlauf</button>
+    </div>
+    <svg id="ridgeChart" width="100%" height="658"></svg>
+    <details class="insight-toggle">
+      <summary>Analyse &amp; Einordnung</summary>
+      <div class="insight" id="ridgeInsight">–</div>
+    </details>
+  </div>
+
+  <!-- ===== Jahresvergleich ===== -->
+  <div class="section-divider">
+    <span class="eyebrow" style="color:var(--signal-amber);">Jahresvergleich</span>
+  </div>
+  <div class="panel" style="margin-top:4px;">
+    <div class="panel-head">
+      <p class="eyebrow">2020–2024 · nach Verkehrsmittel</p>
+      <h2 class="panel-title">Wie haben sich die Unfallzahlen entwickelt?</h2>
+    </div>
+    <div class="yc-controls">
+      <div class="yc-metric-group">
+        <button class="yc-metric-btn active" data-metric="count">Anzahl Unfälle</button>
+        <button class="yc-metric-btn" data-metric="share">Anteil an Gesamt (%)</button>
+        <button class="yc-metric-btn" data-metric="rate">Schwer/Getötet-Rate (%)</button>
+      </div>
+      <div class="yc-legend" id="ycLegend"></div>
+    </div>
+    <svg id="ycChart" width="100%" height="420"></svg>
+    <details class="insight-toggle">
+      <summary>Analyse &amp; Einordnung</summary>
+      <div class="insight red" id="ycInsight">–</div>
+    </details>
+  </div>
+
+  <footer>
+    <span>Datenquelle: Statistische Ämter des Bundes und der Länder — Unfallatlas 2020–2024 (destatis.de). Vollständiger Datensatz, 1.270.879 Unfälle, keine Stichprobe. Aufbereitung &amp; Visualisierung: Visual-Analytics-Projekt.</span>
+    <span>Interaktion: Klick auf Balken / Zellen filtert alle Ansichten (Crossfilter-Logik). Mehrfachauswahl je Dimension = ODER, zwischen Dimensionen = UND.</span>
+  </footer>
+
+
+</div>
+
+</div>
+
+<div class="tooltip-d3" id="tooltip" style="display:none;"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="js/data/accidents_data.js"></script>
+<script src="js/data/timeline_data.js"></script>
+<script src="js/data/bundesland_geo_data.js"></script>
+<script src="js/constants.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/ui-helpers.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/zeitraffer.js"></script>
+</body>
+</html>
